@@ -11,9 +11,18 @@ def extract_alphabet(file_contents):
     """
     return set(file_contents)
 
+def read_alphabet_from_file(file_path="alphabetinput.txt"):
+    """
+    Reads the contents of 'alphabetinput.txt' and returns the unique characters as a set.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return set(file.read())
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return set()
+
 if __name__ == "__main__":
-    # Example usage
-    file_path = "input.txt"
-    contents = read_file(file_path)
-    alphabet = extract_alphabet(contents)
-    print("Alphabet:", alphabet)
+    # Example usage for reading from 'alphabetinput.txt'
+    default_alphabet = read_alphabet_from_file()
+    print("Alphabet from 'alphabetinput.txt':", default_alphabet)
