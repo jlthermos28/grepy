@@ -1,40 +1,30 @@
+# Import necessary functions from other modules
+from alphabet import read_alphabet
 from nfa import regex_to_nfa
-from dfa import nfa_to_dfa, process_file
-from alphabet import read_file, extract_alphabet
+from dfa import nfa_to_dfa
+from dfaoutput import process_file
 import os
 
 def main():
-    regex = input("Enter a regular expression: ")
-    file_path = "alphabetinput.txt"  
-    file_contents = read_file(file_path)
-    alphabet = extract_alphabet(file_contents)
-    print(f"Alphabet in the file: {alphabet}")
+    # Step 1: Read and Learn the Alphabet
+    alphabet = read_alphabet("alphabetinput.txt")
+    print("Learned alphabet:", alphabet)
 
-    # Generate NFA from regex
+    # Step 2: Input Regular Expression
+    regex = input("Enter a regular expression: ")
+
+    # Step 3: Convert Regex to NFA
     nfa = regex_to_nfa(regex)
 
-    # Convert NFA to DFA
+    # Step 4: Convert NFA to DFA
     dfa = nfa_to_dfa(nfa)
 
-    # Process the file with DFA
-    process_file(file_path, dfa)
-
-    # Output NFA and DFA in DOT format
-    with open("nfa.dot", "w") as nfa_file:
-        nfa_file.write(nfa.to_dot_format())
-
-    with open("dfa.dot", "w") as dfa_file:
-        dfa_file.write(dfa.to_dot_format())
-
-    # Ensure 'dotfiles' subdirectory exists
-    os.makedirs("dotfiles", exist_ok=True)
-
-    # Output NFA and DFA in DOT format in the 'dotfiles' subfolder
-    with open("dotfiles/nfa.dot", "w") as nfa_file:
-        nfa_file.write(nfa.to_dot_format())
-
-    with open("dotfiles/dfa.dot", "w") as dfa_file:
-        dfa_file.write(dfa.to_dot_format())
+    # Step 5: Process File and Output Results
+    input_file = "alphabetinput.txt"
+    output_folder = "dotfiles"
+    output_file = os.path.join(output_folder, "results.dot")
+    process_file(input_file, dfa, output_file)
+    print(f"Results written to {output_file}")
 
 if __name__ == "__main__":
     main()

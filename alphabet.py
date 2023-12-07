@@ -1,28 +1,21 @@
-def read_file(file_path):
+def read_alphabet(file_path):
     """
-    Reads the contents of a file and returns it as a string.
+    Reads the alphabet from a given text file. Each line in the file is assumed to be a string
+    containing characters from the alphabet.
+    
+    :param file_path: Path to the text file containing the alphabet.
+    :return: A set containing unique alphabet characters.
     """
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
+    alphabet = set()
 
-def extract_alphabet(file_contents):
-    """
-    Extracts the unique characters from the file contents and returns them as a set.
-    """
-    return set(file_contents)
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Add each character in the line to the alphabet set
+            alphabet.update(line.strip())
 
-def read_alphabet_from_file(file_path="alphabetinput.txt"):
-    """
-    Reads the contents of 'alphabetinput.txt' and returns the unique characters as a set.
-    """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return set(file.read())
-    except FileNotFoundError:
-        print(f"File not found: {file_path}")
-        return set()
+    return alphabet
 
 if __name__ == "__main__":
-    # Example usage for reading from 'alphabetinput.txt'
-    default_alphabet = read_alphabet_from_file()
-    print("Alphabet from 'alphabetinput.txt':", default_alphabet)
+    # Example usage
+    alphabet = read_alphabet("alphabetinput.txt")
+    print("Learned alphabet:", alphabet)

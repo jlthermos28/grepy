@@ -1,95 +1,56 @@
 class State:
-    def __init__(self, accept=False):
+    """ A state with one or two edges, all edges labeled by label. """
+
+    def __init__(self, label=None, edges=None):
+        self.label = label
+        self.edges = edges if edges else []
+
+    def __str__(self):
+        return f"State(label={self.label}, edges={self.edges})"
+
+class Fragment:
+    """ An NFA fragment with a start state and an accept state. """
+
+    def __init__(self, start, accept):
+        self.start = start
         self.accept = accept
-        self.transitions = {}
 
-    def add_transition(self, symbol, state):
-        if symbol in self.transitions:
-            self.transitions[symbol].append(state)
+def regex_to_nfa(pattern):
+    """ Convert a regular expression pattern to a NFA. """
+    stack = []
+    for char in pattern:
+        if char == '*':
+            frag = stack.pop()
+            accept = State()
+            start = State(edges=[frag.start, accept])
+            frag.accept.edges = [frag.start, accept]
+            stack.append(Fragment(start, accept))
+        elif char == '|':
+            frag2 = stack.pop()
+            frag1 = stack.pop()
+            accept = State()
+            start = State(edges=[frag1.start, frag2.start])
+            frag1.accept.edges = [accept]
+            frag2.accept.edges = [accept]
+            stack.append(Fragment(start, accept))
         else:
-            self.transitions[symbol] = [state]
+            accept = State()
+            start = State(char, [accept])
+            stack.append(Fragment(start, accept))
 
-class NFA:
-    def __init__(self):
-        self.start_state = State()
-        self.states = [self.start_state]
+    # Simulating the effect of '^' and '$'
+    if stack:
+        final_frag = stack.pop()
+        start_state = State(edges=[final_frag.start])
+        final_frag.accept.edges = [State()]
+        final_nfa = Fragment(start_state, final_frag.accept.edges[0])
+    else:
+        raise Exception("Syntax error in regex")
 
-    def add_state(self, accept=False):
-        state = State(accept)
-        self.states.append(state)
-        return state
-    
-    def to_dot_format(self):
-        dot_str = "digraph NFA {\n"
-        dot_str += "    rankdir=LR;\n"
-        dot_str += "    node [shape = doublecircle];\n"
+    return final_nfa
 
-        # Mark accept states
-        for state in self.states:
-            if state.accept:
-                dot_str += f"    {id(state)} [label=\"{id(state)}\"];\n"
-
-        dot_str += "    node [shape = circle];\n"
-
-        # Transitions
-        for state in self.states:
-            for symbol, next_states in state.transitions.items():
-                for next_state in next_states:
-                    dot_str += f"    {id(state)} -> {id(next_state)} [label=\"{symbol}\"];\n"
-
-        dot_str += "}\n"
-        return dot_str
-
-def regex_to_nfa(regex):
-    nfa_stack = []
-
-    for char in regex:
-        if char == '|':
-            nfa2 = nfa_stack.pop()
-            nfa1 = nfa_stack.pop()
-            nfa_stack.append(union(nfa1, nfa2))
-        elif char == '*':
-            nfa1 = nfa_stack.pop()
-            nfa_stack.append(kleene_star(nfa1))
-        else:
-            nfa_stack.append(single_char_nfa(char))
-
-    return nfa_stack.pop()
-
-def single_char_nfa(char):
-    start = State()
-    accept = State(True)
-    start.add_transition(char, accept)
-    return NFA(start, [accept])
-
-def union(nfa1, nfa2):
-    start = State()
-    accept = State(True)
-
-    start.epsilon_transitions.append(nfa1.start_state)
-    start.epsilon_transitions.append(nfa2.start_state)
-
-    for accept_state in nfa1.accept_states:
-        accept_state.epsilon_transitions.append(accept)
-    for accept_state in nfa2.accept_states:
-        accept_state.epsilon_transitions.append(accept)
-
-    return NFA(start, [accept])
-
-def kleene_star(nfa):
-    start = State()
-    accept = State(True)
-
-    start.epsilon_transitions.append(nfa.start_state)
-    start.epsilon_transitions.append(accept)
-
-    for accept_state in nfa.accept_states:
-        accept_state.epsilon_transitions.append(nfa.start_state)
-        accept_state.epsilon_transitions.append(accept)
-
-    return NFA(start, [accept])
 
 if __name__ == "__main__":
     regex = input("Enter a regular expression: ")
     nfa = regex_to_nfa(regex)
-    # Code to visualize or test the NFA
+    print("NFA for the given regex:", nfa.start)
