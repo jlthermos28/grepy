@@ -19,4 +19,5 @@ In the grepy folder you will see a txt file named alphabetinput.txt, in there yo
 
 
 SIDE NOTE: OPERATORS THAT ARE KNOWN TO WORK: * AND |
+
 PARENTHASES HAS BEEN GIVING ME A HARD TIME SO IM NOT SURE IF IT WORKS
