@@ -15,4 +15,4 @@ Very simple to run:
 
 HOW TO USE
 
-In the grepy folder you will see a txt file names alphabetinput.txt, in there you can write lines of whatever you want the program to learn in regards to the alphabet, then when you run the program with the instructions above, it will prompt you to enter your own grepy expression of your choice to test against those lines. DOT file can be found in subfolder "dotfiles", it will constantly overwrite the file that is in there (that is if it is not the first successful use of the program). 
+In the grepy folder you will see a txt file named alphabetinput.txt, in there you can write lines of whatever you want the program to learn in regards to the alphabet, then when you run the program with the instructions above, it will prompt you to enter your own grepy expression of your choice to test against those lines. DOT file can be found in subfolder "dotfiles", it will constantly overwrite the file that is in there (that is if it is not the first successful use of the program). 
