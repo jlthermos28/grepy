@@ -16,6 +16,5 @@ def read_alphabet(file_path):
     return alphabet
 
 if __name__ == "__main__":
-    # Example usage
     alphabet = read_alphabet("alphabetinput.txt")
     print("Learned alphabet:", alphabet)
