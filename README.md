@@ -5,7 +5,7 @@ IF YOU DO NOT HAVE PYTHON INSTALLED, INSTALL THE LATEST VERSION USING LINK
 
 https://www.python.org/downloads/
 
-Very simple to run:
+Very simple to run(Only on windows, I do not own a mac so I couldn't test the workflow on that):
 
 1. First clone repo to desired local space on hdd
 2. Open CMD
