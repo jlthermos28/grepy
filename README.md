@@ -10,7 +10,7 @@ Very simple to run:
 1. First clone repo to desired local space on hdd
 2. Open CMD
 3. use cd to change directory to where repo is cloned
-4. Once in the grepy folder in cmd, type "python main.py" (no quotes) and pres enter
+4. Once in the grepy folder in cmd, type "python main.py" (no quotes) and press enter
 5. Enjoy
 
 HOW TO USE
