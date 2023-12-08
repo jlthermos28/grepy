@@ -10,7 +10,7 @@ def main():
     # Convert regex to DFA and export to DOT file
     regex = input("Enter a regular expression (^...$ format): ")
     nfa = regex_to_nfa(regex)
-    dfa_start, dfa_states = nfa_to_dfa(nfa)
+    dfa_start, dfa_states = nfa_to_dfa(nfa.start_state)
 
     dfa_to_dot(dfa_start, dfa_states, "dotfiles/dfa.dot")
     print("DFA has been exported to dotfiles/dfa.dot")

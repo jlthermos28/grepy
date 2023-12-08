@@ -1,7 +1,11 @@
 digraph DFA {
     rankdir=LR;
-    node [shape = doublecircle]; S0 S2;
+    node [shape = doublecircle]; S4;
     node [shape = circle];
-    "S0" -> "S1" [ label = "a" ];
-    "S1" -> "S2" [ label = "b" ];
+    "S0" -> "S1" [ label = "^" ];
+    "S1" -> "S2" [ label = "a" ];
+    "S2" -> "S3" [ label = "b" ];
+    "S2" -> "S4" [ label = "$" ];
+    "S3" -> "S3" [ label = "b" ];
+    "S3" -> "S4" [ label = "$" ];
 }
