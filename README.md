@@ -16,3 +16,7 @@ Very simple to run:
 HOW TO USE
 
 In the grepy folder you will see a txt file named alphabetinput.txt, in there you can write lines of whatever you want the program to learn in regards to the alphabet, then when you run the program with the instructions above, it will prompt you to enter your own grepy expression of your choice to test against those lines. DOT file can be found in subfolder "dotfiles", it will constantly overwrite the file that is in there (that is if it is not the first successful use of the program). If it is your first time using it, there should be no files at all in that subfolder, if there are, delete them before using this program.
+
+
+SIDE NOTE: OPERATORS THAT ARE KNOWN TO WORK: * AND |
+PARENTHASES HAS BEEN GIVING ME A HARD TIME SO IM NOT SURE IF IT WORKS
