@@ -1,5 +1,0 @@
-digraph DFA {
-    rankdir=LR;
-    node [shape = doublecircle];
-    node [shape = circle];
-}

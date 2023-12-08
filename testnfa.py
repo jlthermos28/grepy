@@ -1,82 +1,71 @@
 class State:
-    """ A state with one or two edges, all edges labeled by label. """
-    def __init__(self, label=None, edges=None):
+    def __init__(self, label, is_accept=False):
         self.label = label
-        self.edges = edges if edges else []
+        self.is_accept = is_accept
+        self.transitions = {}
 
-class Fragment:
-    """ An NFA fragment with a start state and an accept state. """
-    def __init__(self, start, accept):
-        self.start = start
-        self.accept = accept
-
-def regex_to_postfix(infix_regex):
-    """ Convert infix regex to postfix. """
-    precedence = {'*': 3, '.': 2, '|': 1}
-    postfix, stack = "", []
-
-    for char in infix_regex:
-        if char == '(':
-            stack.append(char)
-        elif char == ')':
-            while stack and stack[-1] != '(':
-                postfix += stack.pop()
-            stack.pop()  # Pop '('
-        elif char in precedence:
-            while stack and precedence.get(stack[-1], 0) >= precedence[char]:
-                postfix += stack.pop()
-            stack.append(char)
+    def add_transition(self, char, target_state):
+        if char in self.transitions:
+            self.transitions[char].append(target_state)
         else:
-            postfix += char
+            self.transitions[char] = [target_state]
 
-    while stack:
-        postfix += stack.pop()
+    def epsilon_closure(self):
+        closure = set()
+        stack = [self]
 
-    return postfix
+        while stack:
+            state = stack.pop()
+            closure.add(state)
 
-def regex_to_nfa(postfix):
-    stack = []
-    for char in postfix:
-        if char == '.':
-            frag2 = stack.pop()
-            frag1 = stack.pop()
-            frag1.accept.edges.append(frag2.start)
-            stack.append(Fragment(frag1.start, frag2.accept))
-        elif char == '|':
-            frag2 = stack.pop()
-            frag1 = stack.pop()
-            accept = State()
-            start = State(edges=[frag1.start, frag2.start])
-            frag1.accept.edges.append(accept)
-            frag2.accept.edges.append(accept)
-            stack.append(Fragment(start, accept))
-        elif char == '*':
-            frag = stack.pop()
-            accept = State()
-            start = State(edges=[frag.start, accept])
-            frag.accept.edges.append(frag.start)
-            frag.accept.edges.append(accept)
-            stack.append(Fragment(start, accept))
+            if None in state.transitions:
+                for target_state in state.transitions[None]:
+                    if target_state not in closure:
+                        stack.append(target_state)
+
+        return closure
+
+def regex_to_nfa(regex):
+    start_state = State("start")
+    accept_state = State("accept", is_accept=True)
+    start_state.add_transition(None, accept_state)
+
+    current_state = start_state
+
+    for char in regex:
+        if char == '^':
+            continue
+        elif char == '$':
+            current_state.add_transition(None, accept_state)
         else:
-            accept = State()
-            start = State(label=char, edges=[accept])
-            stack.append(Fragment(start, accept))
+            new_state = State(char)
+            current_state.add_transition(char, new_state)
+            current_state = new_state
 
-    return stack.pop() if stack else None
+    return start_state
 
-# Taking user input for regex
-infix_regex = input("Enter a regular expression (should start with ^ and end with $): ")
+def main():
+    regex = input("Enter a regular expression (^...$ format): ")
+    nfa = regex_to_nfa(regex)
 
-# Validate the input
-if not infix_regex.startswith('^') or not infix_regex.endswith('$'):
-    print("Error: The regular expression must start with '^' and end with '$'.")
-else:
-    # Remove ^ and $ for processing
-    infix_regex = infix_regex[1:-1]
-    postfix_regex = regex_to_postfix(infix_regex)
-    nfa = regex_to_nfa(postfix_regex)
+    with open("alphabetinput.txt", "r") as input_file:
+        for test_input in input_file:
+            test_input = test_input.strip()
 
-    if nfa:
-        print("NFA created successfully.")
-    else:
-        print("Error in creating NFA.")
+            current_states = nfa.epsilon_closure()
+            for char in test_input:
+                next_states = set()
+                for state in current_states:
+                    if char in state.transitions:
+                        next_states.update(state.transitions[char])
+                current_states = set()
+                for state in next_states:
+                    current_states.update(state.epsilon_closure())
+
+            if any(state.is_accept for state in current_states):
+                print(f"Input: {test_input}, Result: Accepted")
+            else:
+                print(f"Input: {test_input}, Result: Rejected")
+
+if __name__ == "__main__":
+    main()
