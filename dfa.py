@@ -1,136 +1,82 @@
-def nfa_to_dfa(nfa):
-    """
-    Converts an NFA to a DFA using the subset construction algorithm.
-    
-    :param nfa: The NFA to convert.
-    :return: A DFA.
-    """
-    initial_state = frozenset(get_closure(nfa.start))  # Start with the closure of the NFA's start state
-    dfa_states = {initial_state: State()}
-    unprocessed_states = [initial_state]
-    dfa_accept_states = []
-
-    while unprocessed_states:
-        current = unprocessed_states.pop()
-        for input_symbol in get_input_symbols(nfa):
-            # Determine the set of NFA states reachable from 'current' on 'input_symbol'
-            new_state = frozenset(transition(current, input_symbol))
-
-            if new_state not in dfa_states:
-                dfa_states[new_state] = State()
-                unprocessed_states.append(new_state)
-
-            # Add a transition in the DFA for this input symbol
-            dfa_states[current].add_transition(input_symbol, dfa_states[new_state])
-
-            # If any NFA accept state is in 'new_state', mark the corresponding DFA state as accept
-            if any(state in nfa.accept_states for state in new_state):
-                dfa_accept_states.append(dfa_states[new_state])
-
-    return DFA(dfa_states[initial_state], dfa_accept_states)
-
-def get_closure(state):
-    """
-    Computes the epsilon-closure of a given state in an NFA. The epsilon-closure
-    is the set of states reachable from the given state on epsilon-transitions (transitions
-    with None as the input symbol).
-    
-    :param state: The state for which epsilon-closure is to be computed.
-    :return: A set containing all states in the epsilon-closure of the given state.
-    """
-    closure = set([state])
-    stack = [state]
-
-    while stack:
-        current_state = stack.pop()
-        for edge in current_state.edges:
-            if edge.label is None and edge not in closure:
-                closure.add(edge)
-                stack.append(edge)
-
-    return closure
+from nfa import nfa  # Import the NFA from nfa.py
+import os 
 
 
-def get_input_symbols(nfa):
-    """
-    Returns the set of input symbols for the given NFA, excluding epsilon (None) transitions.
-    
-    :param nfa: The NFA whose input symbols are to be extracted.
-    :return: A set of input symbols used in the NFA.
-    """
-    symbols = set()
-    states_to_process = [nfa.start]
-
-    # Using a set to keep track of processed states to avoid infinite loops in cyclic NFAs
-    processed_states = set()
-
-    while states_to_process:
-        state = states_to_process.pop()
-        if state in processed_states:
-            continue
-
-        processed_states.add(state)
-
-        if state.edges:
-            for edge in state.edges:
-                if edge.label is not None:
-                    symbols.add(edge.label)
-                if edge not in processed_states:
-                    states_to_process.append(edge)
-
-    return symbols
-
-
-def transition(states, input_symbol):
-    """
-    Computes the set of states that can be reached from the given set of states on the given input symbol.
-    This includes following any epsilon-transitions from the reached states.
-
-    :param states: A set of states in the NFA.
-    :param input_symbol: The input symbol for which the transitions are to be determined.
-    :return: A set of states that are reachable from the input states on the given input symbol.
-    """
-    result = set()
-    for state in states:
-        for edge in state.edges:
-            if edge.label == input_symbol:
-                result.update(get_closure(edge))
-
-    return result
-
-
-# Definitions for State, DFA, etc., would also be required here
-
-class State:
-    """
-    Represents a state in a DFA. Each state has transitions to other states
-    based on input symbols.
-    """
-    def __init__(self):
-        self.transitions = {}  # Dictionary mapping input symbols to States
+class DFAState:
+    def __init__(self, nfa_states):
+        self.nfa_states = frozenset(nfa_states)
+        self.is_accept = any(state.is_accept for state in nfa_states)
+        self.transitions = {}  # Dictionary to hold state transitions
 
     def add_transition(self, symbol, state):
-        """
-        Add a transition from this state to another state on a given input symbol.
-        """
         self.transitions[symbol] = state
 
-class DFA:
-    """
-    Represents a Deterministic Finite Automaton.
-    """
-    def __init__(self, start_state, accept_states):
-        self.start_state = start_state
-        self.accept_states = set(accept_states)
+def epsilon_closure(state, seen=None):
+    """ Find the epsilon closure of a given NFA state. """
+    if seen is None:
+        seen = set()
+    if state not in seen:
+        seen.add(state)
+        for edge in state.edges:
+            if edge.label is None:  # Epsilon transition
+                epsilon_closure(edge, seen)
+    return seen
 
-    def accepts(self, input_string):
-        """
-        Check if the DFA accepts a given input string.
-        """
-        current_state = self.start_state
-        for symbol in input_string:
-            if symbol in current_state.transitions:
-                current_state = current_state.transitions[symbol]
-            else:
-                return False
-        return current_state in self.accept_states
+def move(states, symbol):
+    """ Return the set of states to which there is a transition on symbol from any state in states. """
+    return set(edge for state in states for edge in state.edges if edge.label == symbol)
+
+def nfa_to_dfa(nfa):
+    initial_closure = epsilon_closure(nfa.start)
+    dfa_start = DFAState(initial_closure)
+    states = {dfa_start.nfa_states: dfa_start}
+    unmarked = [dfa_start]
+
+    while unmarked:
+        current = unmarked.pop()
+        for symbol in set(edge.label for state in current.nfa_states for edge in state.edges if edge.label):
+            target_closure = epsilon_closure(move(current.nfa_states, symbol))
+            target_state = states.get(target_closure)
+            if target_state is None:
+                target_state = DFAState(target_closure)
+                states[target_closure] = target_state
+                unmarked.append(target_state)
+            # Here you would add the transition from current to target_state on symbol
+            current.add_transition(symbol, target_state)
+    return states.values()  # Return the set of DFA states
+
+def dfa_to_dot(dfa_states, filename="dfa_graph.dot"):
+    subfolder = "dotfiles"
+    os.makedirs(subfolder, exist_ok=True)  # Create the subfolder if it doesn't exist
+
+    dot_str = "digraph DFA {\n"
+    dot_str += "    rankdir=LR;\n"
+    dot_str += "    node [shape = doublecircle];\n"
+
+    # Mark accepting states
+    for state in dfa_states:
+        if state.is_accept:
+            dot_str += f"    \"{state}\";\n"
+
+    dot_str += "    node [shape = circle];\n"
+
+    # Transitions
+    for state in dfa_states:
+        for symbol, next_state in state.transitions:  # Assuming each state has a 'transitions' attribute
+            dot_str += f"    \"{state}\" -> \"{next_state}\" [ label = \"{symbol}\" ];\n"
+
+    dot_str += "}"
+
+    output_path = os.path.join(subfolder,filename)
+
+    # Write to file
+    with open(output_path, 'w') as file:
+        file.write(dot_str)
+
+
+# Convert NFA to DFA
+dfa_states = nfa_to_dfa(nfa)
+
+
+# Call the dfa_to_dot function with the desired filename (e.g., 'my_dfa_graph.dot')
+dfa_to_dot(dfa_states, filename="my_dfa_graph.dot")

@@ -1,43 +1,31 @@
 import os
-from dfa import DFA, State
-import pickle
 
-# Assuming DFA and State classes are defined here or imported
-# from dfa.py or another module
+def dfa_to_dot(dfa_states, filename="dfa_graph.dot"):
+    dot_str = "digraph DFA {\n"
+    dot_str += "    rankdir=LR;\n"
+    dot_str += "    node [shape = doublecircle];\n"
 
-def read_dfa(file_path):
-    """
-    Reads a serialized DFA from a file and returns the DFA object.
+    # Mark accepting states
+    for state in dfa_states:
+        if state.is_accept:
+            dot_str += f"    {id(state)};\n"
 
-    :param file_path: Path to the file containing the serialized DFA.
-    :return: Deserialized DFA object.
-    """
-    with open(file_path, 'rb') as file:
-        dfa = pickle.load(file)
-    return dfa
+    dot_str += "    node [shape = circle];\n"
 
+    # Transitions
+    for state in dfa_states:
+        for (symbol, next_state) in state.transitions:  # Assuming state.transitions is a list of (symbol, next_state) tuples
+            dot_str += f"    {id(state)} -> {id(next_state)} [ label = \"{symbol}\" ];\n"
 
-def process_file(input_file, dfa, output_file):
-    with open(input_file, 'r') as file:
-        lines = file.readlines()
+    dot_str += "}"
 
-    with open(output_file, 'w') as file:
-        for line in lines:
-            line = line.strip()
-            result = "Accept" if dfa.accepts(line) else "Reject"
-            file.write(f"{line}: {result}\n")
+    # Create 'dotfiles' directory if it doesn't exist
+    os.makedirs('dotfiles', exist_ok=True)
 
-def main():
-    dfa = read_dfa()  # Initialize your DFA here
+    # Write to file
+    with open(f'dotfiles/{filename}', 'w') as file:
+        file.write(dot_str)
 
-    input_file = "alphabetinput.txt"
-    output_folder = "dotfiles"
-    output_file = os.path.join(output_folder, "results.dot")
-
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
-    process_file(input_file, dfa, output_file)
-
-if __name__ == "__main__":
-    main()
+# Example usage
+# dfa_states = ... # Your DFA states
+# dfa_to_dot(dfa_states)

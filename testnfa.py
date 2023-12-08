@@ -1,96 +1,82 @@
 class State:
-    def __init__(self, accept=False):
+    """ A state with one or two edges, all edges labeled by label. """
+    def __init__(self, label=None, edges=None):
+        self.label = label
+        self.edges = edges if edges else []
+
+class Fragment:
+    """ An NFA fragment with a start state and an accept state. """
+    def __init__(self, start, accept):
+        self.start = start
         self.accept = accept
-        self.edges = {}  # Dictionary to hold transitions: {character: state}
 
-class NFA:
-    def __init__(self, start_state):
-        self.start_state = start_state
+def regex_to_postfix(infix_regex):
+    """ Convert infix regex to postfix. """
+    precedence = {'*': 3, '.': 2, '|': 1}
+    postfix, stack = "", []
 
-def regex_to_nfa(regex):
-    if not regex.startswith('^') or not regex.endswith('$'):
-        raise ValueError("Regex must start with '^' and end with '$'")
-
-    # Remove ^ and $ since they are not to be processed in the loop
-    regex = regex[1:-1]
-
-    nfa_stack = []
-
-    for char in regex:
-        if char == '*':
-            nfa = nfa_stack.pop()
-            start = State()
-            accept = State(accept=True)
-            start.edges[''] = [nfa.start_state, accept]
-            nfa.start_state.edges[''] = [accept, nfa.start_state]
-            nfa_stack.append(NFA(start))
-        elif char == '|':
-            nfa2 = nfa_stack.pop()
-            nfa1 = nfa_stack.pop()
-            start = State()
-            accept = State(accept=True)
-            start.edges[''] = [nfa1.start_state, nfa2.start_state]
-            for state in [nfa1.start_state, nfa2.start_state]:
-                if state.accept:
-                    state.accept = False
-                    state.edges[''] = [accept]
-            nfa_stack.append(NFA(start))
+    for char in infix_regex:
+        if char == '(':
+            stack.append(char)
+        elif char == ')':
+            while stack and stack[-1] != '(':
+                postfix += stack.pop()
+            stack.pop()  # Pop '('
+        elif char in precedence:
+            while stack and precedence.get(stack[-1], 0) >= precedence[char]:
+                postfix += stack.pop()
+            stack.append(char)
         else:
-            accept = State(accept=True)
-            start = State()
-            start.edges[char] = [accept]
-            nfa_stack.append(NFA(start))
+            postfix += char
 
-    while len(nfa_stack) > 1:
-        nfa2 = nfa_stack.pop()
-        nfa1 = nfa_stack.pop()
-        nfa1.start_state.edges[''] = [nfa2.start_state]
-        nfa_stack.append(NFA(nfa1.start_state))
+    while stack:
+        postfix += stack.pop()
 
-    # The final NFA should start with a special start state and end with a special end state
-    final_nfa = nfa_stack.pop()
-    start_state = State()
-    end_state = State(accept=True)
+    return postfix
 
-    # Connect the start state to the NFA's start state
-    start_state.edges[''] = [final_nfa.start_state]
+def regex_to_nfa(postfix):
+    stack = []
+    for char in postfix:
+        if char == '.':
+            frag2 = stack.pop()
+            frag1 = stack.pop()
+            frag1.accept.edges.append(frag2.start)
+            stack.append(Fragment(frag1.start, frag2.accept))
+        elif char == '|':
+            frag2 = stack.pop()
+            frag1 = stack.pop()
+            accept = State()
+            start = State(edges=[frag1.start, frag2.start])
+            frag1.accept.edges.append(accept)
+            frag2.accept.edges.append(accept)
+            stack.append(Fragment(start, accept))
+        elif char == '*':
+            frag = stack.pop()
+            accept = State()
+            start = State(edges=[frag.start, accept])
+            frag.accept.edges.append(frag.start)
+            frag.accept.edges.append(accept)
+            stack.append(Fragment(start, accept))
+        else:
+            accept = State()
+            start = State(label=char, edges=[accept])
+            stack.append(Fragment(start, accept))
 
-    # Correctly iterating over the states to find the accept state
-    for state in final_nfa.start_state.edges.values():
-        for s in state:
-            if s.accept:
-                s.accept = False
-                s.edges[''] = [end_state]
+    return stack.pop() if stack else None
 
-    return NFA(start_state)
+# Taking user input for regex
+infix_regex = input("Enter a regular expression (should start with ^ and end with $): ")
 
-# Example usage
-nfa = regex_to_nfa("^a*b|c$")
+# Validate the input
+if not infix_regex.startswith('^') or not infix_regex.endswith('$'):
+    print("Error: The regular expression must start with '^' and end with '$'.")
+else:
+    # Remove ^ and $ for processing
+    infix_regex = infix_regex[1:-1]
+    postfix_regex = regex_to_postfix(infix_regex)
+    nfa = regex_to_nfa(postfix_regex)
 
-
-def match(nfa, string):
-    def dfs(state, pos):
-        if pos == len(string):
-            return state.accept
-        if string[pos] in state.edges:
-            for next_state in state.edges[string[pos]]:
-                if dfs(next_state, pos + 1):
-                    return True
-        if '' in state.edges:
-            for next_state in state.edges['']:
-                if dfs(next_state, pos):
-                    return True
-        return False
-
-    return dfs(nfa.start_state, 0)
-
-# Create NFA from regex
-nfa = regex_to_nfa("^a*b|c$")
-
-# Test strings
-test_strings = ["ab", "aab", "b", "c", "ac", "abc", "aabc"]
-
-# Check each string
-for s in test_strings:
-    print(f"Does '{s}' match '^a*b|c$'? {match(nfa, s)}")
-
+    if nfa:
+        print("NFA created successfully.")
+    else:
+        print("Error in creating NFA.")
